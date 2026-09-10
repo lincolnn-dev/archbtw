@@ -1,0 +1,6 @@
+bibata-cursor-theme-bin
+helium-browser-bin
+noctalia-greeter
+otf-openmoji
+plymouth-theme-arch-logo-symbol
+visor

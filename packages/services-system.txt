@@ -1,0 +1,11 @@
+# Curated enable list (archinstall stock units like getty@, systemd-networkd*, systemd-resolved* omitted — enable only if you use them).
+# See services-system-full.txt for the full capture from the source machine.
+clamav-daemon.service
+clamav-freshclam.service
+fail2ban.service
+greetd.service
+keyd.service
+power-profiles-daemon.service
+snapper-cleanup.timer
+snapper-timeline.timer
+ufw.service

@@ -1,0 +1,42 @@
+{
+  "language": "auto",
+  "notifications_enabled": true,
+  "minimize_to_tray": false,
+  "start_minimized": false,
+  "close_behavior": "quit",
+  "quarantine_directory": "",
+  "scheduled_scans_enabled": false,
+  "schedule_frequency": "weekly",
+  "schedule_time": "02:00",
+  "schedule_targets": [],
+  "schedule_skip_on_battery": true,
+  "schedule_auto_quarantine": false,
+  "schedule_day_of_week": 0,
+  "schedule_day_of_month": 1,
+  "exclusion_patterns": [],
+  "scan_backend": "auto",
+  "daemon_socket_path": "",
+  "clamd_conf_path": "/etc/clamav/clamd.conf",
+  "freshclam_conf_path": "",
+  "clamd_size_limit_unit_migration_done": true,
+  "virustotal_api_key": null,
+  "allow_plaintext_api_key_fallback": false,
+  "virustotal_remember_no_key_action": "none",
+  "debug_log_level": "WARNING",
+  "debug_log_max_size_mb": 5,
+  "debug_log_max_files": 3,
+  "show_live_progress": true,
+  "device_auto_scan_enabled": false,
+  "device_auto_scan_types": [
+    "removable",
+    "external"
+  ],
+  "device_auto_scan_notify": true,
+  "device_auto_scan_max_size_gb": 32,
+  "device_auto_scan_delay_seconds": 3,
+  "device_auto_scan_auto_quarantine": false,
+  "device_auto_scan_skip_on_battery": true,
+  "_migrations": {
+    "xdg_migration_version": 1
+  }
+}

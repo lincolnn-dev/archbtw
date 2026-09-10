@@ -1,0 +1,22 @@
+# Noctalia generated outputs — never commit (regenerated on first Noctalia launch from settings.toml lists).
+**/themes/noctalia.conf
+**/themes/noctalia.json
+**/themes/noctalia.theme
+**/themes/noctalia.jsonc
+*.bak
+
+# Noctalia re-fetchable caches / runtime — never commit.
+community-palettes/
+community-templates/
+plugin-cache/
+plugins/
+wallhaven/thumbs/
+visor-staging/
+notification_history.json
+recently_used.json
+usage_counts.json
+
+# Container test scratch (see README testing).
+/test-root/
+*.qcow2
+*.fd

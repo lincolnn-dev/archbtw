@@ -1,0 +1,7 @@
+# Dotfile-managed Noctalia templates (see App Theming docs).
+# settings.toml remains GUI-managed; user templates live here.
+
+[theme.templates.user.visor]
+input_path  = "$XDG_CONFIG_HOME/noctalia/templates/visor.conf"
+output_path = "$XDG_STATE_HOME/noctalia/visor-staging/noctalia.conf"
+post_hook   = "sudo -- /usr/local/bin/visor-install '$XDG_STATE_HOME/noctalia/visor-staging/noctalia.conf' '{{ image }}'"

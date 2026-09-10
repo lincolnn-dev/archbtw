@@ -1,0 +1,12 @@
+# Scoped passwordless rule for the Noctalia -> Visor theme sync hook.
+# Install with: sudo install -m 0440 visor-nopasswd.sudoers /etc/sudoers.d/visor-noctalia
+# Validate with: sudo visudo -c -f /etc/sudoers.d/visor-noctalia
+#
+# This lets Noctalia's post_hook refresh ONLY the Visor theme without a
+# password prompt. /usr/local/bin/visor-install is root-owned (root:root 0755):
+# executable by all, editable only by root, and it only writes the two fixed
+# destinations (\EFI\visor\themes\noctalia.conf and
+# backgrounds\visor-wallpaper.png) — never boot.conf. No new privilege is
+# granted: the user is already in wheel with full sudo access; this is purely
+# a convenience rule.
+tropikalmalady ALL=(root) NOPASSWD: /usr/local/bin/visor-install *

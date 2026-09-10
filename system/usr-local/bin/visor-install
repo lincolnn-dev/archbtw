@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Install Noctalia-rendered Visor theme + wallpaper onto the ESP.
+# Root-owned (root:root 0755) in /usr/local/bin: executable by all, editable
+# only by root. Runs as root via a scoped passwordless sudoers rule
+# (/etc/sudoers.d/visor-noctalia).
+# Usage: visor-install <staged-theme-file> [<wallpaper-image-path>]
+#
+# Only ever writes these two fixed destinations:
+#   /boot/EFI/visor/themes/noctalia.conf
+#   /boot/EFI/visor/backgrounds/visor-wallpaper.png
+# Never touches boot.conf (entries) or anything else on the ESP.
+set -euo pipefail
+
+STAGED="${1:?usage: visor-install <staged-theme-file> [<wallpaper-image>] }"
+IMAGE="${2:-}"
+
+# Test hook: point at a scratch dir instead of the real ESP.
+ESP="${VISOR_ESP_DIR:-/boot/EFI/visor}"
+THEME_OUT="$ESP/themes/noctalia.conf"
+BG_OUT="$ESP/backgrounds/visor-wallpaper.png"
+
+# Refuse to write into an unmounted ESP (would land on the rootfs instead).
+if [ -z "${VISOR_ESP_DIR:-}" ]; then
+    if ! mountpoint -q /boot; then
+        echo "visor-install: /boot is not a mountpoint, refusing to write" >&2
+        exit 1
+    fi
+fi
+
+if [ ! -f "$STAGED" ]; then
+    echo "visor-install: staged theme file not found: $STAGED" >&2
+    exit 1
+fi
+
+if grep -q '{{' "$STAGED"; then
+    echo "visor-install: staged file still contains unrendered placeholders, refusing" >&2
+    exit 1
+fi
+
+mkdir -p "$ESP/themes" "$ESP/backgrounds"
+
+tmp="$(mktemp -p "$ESP/themes" .noctalia.conf.XXXXXX)"
+cp -- "$STAGED" "$tmp"
+chmod 0644 "$tmp"
+mv -f "$tmp" "$THEME_OUT"
+
+# Wallpaper: cover-crop the current Noctalia wallpaper to 1920x1080 PNG.
+# Skipped (theme still installed) when no image is supplied or readable.
+if [ -n "$IMAGE" ] && [ -f "$IMAGE" ]; then
+    bgtmp="$(mktemp -p "$ESP/backgrounds" .visor-wallpaper.XXXXXX.png)"
+    if magick "$IMAGE" -resize '1920x1080^' -gravity center -extent 1920x1080 "PNG32:$bgtmp" 2>/dev/null; then
+        chmod 0644 "$bgtmp"
+        mv -f "$bgtmp" "$BG_OUT"
+    else
+        echo "visor-install: WARNING: could not convert $IMAGE, keeping previous background" >&2
+        rm -f "$bgtmp"
+    fi
+else
+    echo "visor-install: no wallpaper image supplied, keeping previous background" >&2
+fi
+
+echo "visor-install: installed $THEME_OUT"
