@@ -50,5 +50,6 @@ done
 [ -f "$HOME/.config/kitty/kitty.conf" ] && cp -f "$HOME/.config/kitty/kitty.conf" "$REPO_DIR/dotfiles/kitty/.config/kitty/kitty.conf" || true
 [ -f "$HOME/.config/clamui/settings.json" ] && cp -f "$HOME/.config/clamui/settings.json" "$REPO_DIR/dotfiles/clamui/.config/clamui/settings.json" || true
 [ -f "$HOME/.config/clamui/profiles.json" ] && cp -f "$HOME/.config/clamui/profiles.json" "$REPO_DIR/dotfiles/clamui/.config/clamui/profiles.json" || true
+[ -f "$HOME/.local/bin/launcher-config" ] && cp -f "$HOME/.local/bin/launcher-config" "$REPO_DIR/dotfiles/launcher/.local/bin/launcher-config" || true
 
 echo "done. Review with: git -C \"$REPO_DIR\" status --porcelain=v1 && git -C \"$REPO_DIR\" diff --stat"

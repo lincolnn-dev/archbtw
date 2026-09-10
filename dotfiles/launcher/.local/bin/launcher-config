@@ -1,0 +1,382 @@
+#!/usr/bin/env python3
+"""Launcher config: hide/show apps via ~/.local stubs, rename via /usr files."""
+import os
+import re
+import shutil
+import subprocess
+from pathlib import Path
+
+SYSTEM_DIRS = ["/usr/local/share/applications", "/usr/share/applications"]
+LOCAL_DIR = Path.home() / ".local/share/applications"
+BACKUP_KEY = "X-OriginalName"
+
+
+def parse_name(path: Path) -> str:
+    """Return Name= value, else first Name[locale]=, else app id."""
+    try:
+        text = path.read_text(errors="ignore")
+    except OSError:
+        return path.stem
+    for line in text.splitlines():
+        if line.startswith("Name="):
+            return line.split("=", 1)[1].strip() or path.stem
+    for line in text.splitlines():
+        if line.startswith("Name["):
+            return line.split("=", 1)[1].strip() or path.stem
+    return path.stem
+
+
+def is_hidden(appid: str) -> bool:
+    """Hidden if local override contains Hidden=true."""
+    p = LOCAL_DIR / appid
+    if not p.is_file():
+        return False
+    try:
+        text = p.read_text(errors="ignore")
+    except OSError:
+        return False
+    return bool(re.search(r"(?im)^\s*Hidden\s*=\s*true\s*$", text))
+
+
+def get_all_apps():
+    """Unique (appid, name) from system dirs, sorted by name."""
+    seen = {}
+    for d in SYSTEM_DIRS:
+        try:
+            files = os.listdir(d)
+        except OSError:
+            continue
+        for f in files:
+            if not f.endswith(".desktop") or f in seen:
+                continue
+            seen[f] = parse_name(Path(d) / f)
+    return sorted(seen.items(), key=lambda kv: kv[1].lower())
+
+
+def find_system_path(appid: str):
+    for d in SYSTEM_DIRS:
+        p = Path(d) / appid
+        if p.is_file():
+            return p
+    return None
+
+
+def get_renamed_apps():
+    """List of (appid, current_name, original_name, syspath) with backup tag."""
+    seen = {}
+    for d in SYSTEM_DIRS:
+        try:
+            files = os.listdir(d)
+        except OSError:
+            continue
+        for f in files:
+            if not f.endswith(".desktop") or f in seen:
+                continue
+            p = Path(d) / f
+            try:
+                text = p.read_text(errors="ignore")
+            except OSError:
+                continue
+            m = re.search(rf"(?m)^\s*{re.escape(BACKUP_KEY)}\s*=\s*(.*)$", text)
+            if m:
+                original = m.group(1).strip()
+                seen[f] = (parse_name(p), original, p)
+    return sorted(((a, cur, orig, p) for a, (cur, orig, p) in seen.items()),
+                  key=lambda t: t[1].lower())
+
+
+def _write_system_file(path: Path, content: str):
+    """Write to /usr file, using sudo when not writable. Returns error or None."""
+    try:
+        path.write_text(content)
+        return None
+    except PermissionError:
+        pass
+    except OSError as e:
+        return str(e)
+    if shutil.which("sudo") is None:
+        return f"{path} is not writable and sudo is not available."
+    try:
+        r = subprocess.run(["sudo", "tee", str(path)],
+                           input=content.encode(), stdout=subprocess.DEVNULL,
+                           stderr=subprocess.PIPE)
+    except OSError as e:
+        return str(e)
+    if r.returncode != 0:
+        return r.stderr.decode().strip() or f"sudo tee failed for {path}"
+    return None
+
+
+def _refresh_db(syspath: Path):
+    db = shutil.which("update-desktop-database")
+    if not db:
+        return
+    try:
+        if os.access(syspath.parent, os.W_OK):
+            subprocess.run([db, str(syspath.parent)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        elif shutil.which("sudo"):
+            subprocess.run(["sudo", db, str(syspath.parent)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        pass
+
+
+def rename_system_app(syspath: Path, new_name: str):
+    try:
+        text = syspath.read_text(errors="ignore")
+    except OSError as e:
+        return str(e)
+    lines = text.splitlines()
+    name_idx = next((i for i, l in enumerate(lines) if l.startswith("Name=")), None)
+    if name_idx is None:
+        return f"{syspath.name} has no Name= key."
+    has_backup = any(re.match(rf"(?i)^\s*{re.escape(BACKUP_KEY)}\s*=", l) for l in lines)
+    if not has_backup:
+        old_name = lines[name_idx].split("=", 1)[1].strip()
+        lines.insert(name_idx + 1, f"{BACKUP_KEY}={old_name}")
+        name_idx = next(i for i, l in enumerate(lines) if l.startswith("Name="))
+    lines[name_idx] = f"Name={new_name}"
+    err = _write_system_file(syspath, "\n".join(lines).rstrip() + "\n")
+    if err:
+        return err
+    _refresh_db(syspath)
+    return None
+
+
+def restore_system_app(syspath: Path):
+    try:
+        text = syspath.read_text(errors="ignore")
+    except OSError as e:
+        return None, str(e)
+    lines = text.splitlines()
+    m = next((re.match(rf"(?i)^\s*{re.escape(BACKUP_KEY)}\s*=\s*(.*)$", l)
+              for l in lines if re.match(rf"(?i)^\s*{re.escape(BACKUP_KEY)}\s*=", l)), None)
+    if not m:
+        return None, f"{syspath.name} has no {BACKUP_KEY} backup."
+    original = m.group(1).strip()
+    name_idx = next((i for i, l in enumerate(lines) if l.startswith("Name=")), None)
+    if name_idx is None:
+        return None, f"{syspath.name} has no Name= key."
+    lines[name_idx] = f"Name={original}"
+    lines = [l for l in lines if not re.match(rf"(?i)^\s*{re.escape(BACKUP_KEY)}\s*=", l)]
+    err = _write_system_file(syspath, "\n".join(lines).rstrip() + "\n")
+    if err:
+        return None, err
+    _refresh_db(syspath)
+    return original, None
+
+
+def get_hidden_apps():
+    """List of (appid, display name) for hidden apps, sorted by name."""
+    if not LOCAL_DIR.is_dir():
+        return []
+    out = []
+    for f in os.listdir(LOCAL_DIR):
+        if not f.endswith(".desktop") or not is_hidden(f):
+            continue
+        name = None
+        for d in SYSTEM_DIRS:
+            sys_path = Path(d) / f
+            if sys_path.is_file():
+                name = parse_name(sys_path)
+                break
+        if name is None:
+            name = parse_name(LOCAL_DIR / f)
+        out.append((f, name))
+    return sorted(out, key=lambda kv: kv[1].lower())
+
+
+def hide_app(appid: str):
+    LOCAL_DIR.mkdir(parents=True, exist_ok=True)
+    p = LOCAL_DIR / appid
+    if p.is_file():
+        text = p.read_text(errors="ignore")
+        if re.search(r"(?im)^\s*Hidden\s*=\s*true\s*$", text):
+            return  # already hidden
+        lines = text.splitlines()
+        replaced = False
+        for i, line in enumerate(lines):
+            if re.match(r"(?i)^\s*Hidden\s*=", line):
+                lines[i] = "Hidden=true"
+                replaced = True
+        if not replaced:
+            try:
+                idx = next(i for i, l in enumerate(lines) if l.strip() == "[Desktop Entry]")
+                lines.insert(idx + 1, "Hidden=true")
+            except StopIteration:
+                lines = ["[Desktop Entry]", "Hidden=true"] + lines
+        p.write_text("\n".join(lines).rstrip() + "\n")
+    else:
+        p.write_text("[Desktop Entry]\nHidden=true\n")
+
+
+def unhide_app(appid: str):
+    p = LOCAL_DIR / appid
+    if not p.is_file():
+        return
+    lines = p.read_text(errors="ignore").splitlines()
+    kept = [l for l in lines if not re.match(r"(?i)^\s*Hidden\s*=", l)]
+    non_empty = [l for l in kept if l.strip() and l.strip() != "[Desktop Entry]"]
+    if not non_empty:
+        try:
+            p.unlink()
+        except OSError:
+            pass
+    else:
+        p.write_text("\n".join(kept).rstrip() + "\n")
+
+
+def ask_number(max_n: int):
+    while True:
+        try:
+            raw = input("Enter number: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return 0
+        if not raw.isdigit():
+            print("Please enter a number.")
+            continue
+        n = int(raw)
+        if 0 <= n <= max_n:
+            return n
+        print(f"Please enter 0-{max_n}.")
+
+
+def search_matches(query: str):
+    q = query.lower()
+    return [(a, n) for a, n in get_all_apps()
+            if q in n.lower() or q in a.lower()]
+
+
+def hide_flow():
+    try:
+        query = input("Enter app name (0 to go back): ").strip()
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return
+    if query == "0":
+        return
+    if not query:
+        print("Empty search.")
+        return
+    matches = [m for m in search_matches(query) if not is_hidden(m[0])]
+    if not matches:
+        print("No matches found.")
+        return
+    print("0. Back")
+    for i, (appid, name) in enumerate(matches, 1):
+        print(f"{i}. {name} ({appid})")
+    n = ask_number(len(matches))
+    if n == 0:
+        return
+    appid, name = matches[n - 1]
+    hide_app(appid)
+    print(f"Hidden: {name}")
+
+
+def show_flow():
+    hidden = get_hidden_apps()
+    if not hidden:
+        print("No hidden apps.")
+        return
+    print("0. Back")
+    for i, (appid, name) in enumerate(hidden, 1):
+        print(f"{i}. {name} ({appid})")
+    n = ask_number(len(hidden))
+    if n == 0:
+        return
+    appid, name = hidden[n - 1]
+    unhide_app(appid)
+    print(f"Unhidden: {name}")
+
+
+def rename_flow():
+    try:
+        query = input("Enter app name (0 to go back): ").strip()
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return
+    if query == "0":
+        return
+    if not query:
+        print("Empty search.")
+        return
+    matches = [m for m in search_matches(query) if not is_hidden(m[0])]
+    if not matches:
+        print("No matches found.")
+        return
+    print("0. Back")
+    for i, (appid, name) in enumerate(matches, 1):
+        print(f"{i}. {name} ({appid})")
+    n = ask_number(len(matches))
+    if n == 0:
+        return
+    appid, old_name = matches[n - 1]
+    syspath = find_system_path(appid)
+    if syspath is None:
+        print(f"System file for {appid} not found.")
+        return
+    try:
+        new_name = input("Enter new name (0 to cancel): ").strip()
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return
+    if not new_name or new_name == "0":
+        return
+    err = rename_system_app(syspath, new_name)
+    if err:
+        print(f"Rename failed: {err}")
+    else:
+        print(f"Renamed: {old_name} -> {new_name} (needs sudo, backup kept)")
+
+
+def restore_flow():
+    renamed = get_renamed_apps()
+    if not renamed:
+        print("No renamed apps.")
+        return
+    print("0. Back")
+    for i, (appid, cur, orig, _p) in enumerate(renamed, 1):
+        print(f"{i}. {cur} ({appid}) [original: {orig}]")
+    n = ask_number(len(renamed))
+    if n == 0:
+        return
+    appid, cur, _orig, syspath = renamed[n - 1]
+    original, err = restore_system_app(syspath)
+    if err:
+        print(f"Restore failed: {err}")
+    else:
+        print(f"Restored: {cur} -> {original}")
+
+
+def main():
+    while True:
+        print("\n--- Launcher Config ---")
+        print("1. Hide an app")
+        print("2. Show a hidden app")
+        print("3. Rename an app")
+        print("4. Restore original name")
+        print("0. Exit")
+        try:
+            choice = input("Choose: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nBye.")
+            break
+        if choice == "1":
+            hide_flow()
+        elif choice == "2":
+            show_flow()
+        elif choice == "3":
+            rename_flow()
+        elif choice == "4":
+            restore_flow()
+        elif choice == "0":
+            print("Bye.")
+            break
+        else:
+            print("Invalid choice.")
+
+
+if __name__ == "__main__":
+    main()
