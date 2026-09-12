@@ -25,18 +25,15 @@ hl.animation({ leaf = "zoomFactor", enabled = true, speed = 7, bezier = "quick" 
 
 hl.config({
     dwindle = {
-        preserve_split = true, -- You probably want this
-    },
-})
-
-hl.config({
-    master = {
-        new_status = "master",
+        preserve_split = true,
     },
 })
 
 hl.config({
     scrolling = {
         fullscreen_on_one_column = true,
+        direction = "down",
+        column_width = 1.0,
+        wrap_focus = false,
     },
 })
