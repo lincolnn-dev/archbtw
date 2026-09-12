@@ -4,8 +4,9 @@ config_version = 13
 order = [ "default" ]
 
     [bar.default]
-    background_opacity = 0.79999998211860657
+    background_opacity = 0.86999998055398464
     capsule_padding = 8.0
+    concave_edge_corners = false
     enabled = true
     end = [
         "media",
@@ -19,12 +20,12 @@ order = [ "default" ]
         "session"
     ]
     font_family = "JetBrainsMono Nerd Font"
-    margin_ends = 700
-    padding = 10
+    margin_edge = 8
+    margin_ends = 8
     position = "top"
-    radius = 24
+    radius = 10
     shadow = false
-    thickness = 32
+    thickness = 30
 
 [brightness]
 enable_ddcutil = true
@@ -237,12 +238,8 @@ enabled = [ "noctalia/notes" ]
 [shell]
 avatar_path = "/home/tropikalmalady/Pictures/mikasa-pfp.jpg"
 clipboard_auto_paste = "ctrl_v"
-corner_radius_scale = 0.0
 font_family = "JetBrainsMono Nerd Font"
 polkit_agent = true
-
-    [shell.greeter_sync]
-    auto_sync = false
 
     [shell.launcher]
     categories = false
@@ -297,12 +294,12 @@ polkit_agent = true
     variant = "default"
 
 [theme]
-builtin = "Catppuccin"
-community_palette = "Doomed"
+builtin = "Ayu"
+community_palette = "Cyberpunk"
 custom_palette = "wallhaven-5geev3-ts"
 mode = "dark"
-source = "custom"
-wallpaper_scheme = "m3-tonal-spot"
+source = "wallpaper"
+wallpaper_scheme = "dysfunctional"
 
     [theme.templates]
     builtin_ids = [ "btop", "gtk3", "gtk4", "hyprland", "kcolorscheme", "kitty", "qt", "scroll", "starship" ]
@@ -315,16 +312,16 @@ directory_light = "/home/tropikalmalady/Pictures/wallpapers"
 transition_on_startup = true
 
     [wallpaper.default]
-    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-85yl61.png"
+    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-yq9dpx.jpg"
 
     [wallpaper.last]
-    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-85yl61.png"
+    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-yq9dpx.jpg"
 
     [wallpaper.monitors.DP-2]
-    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-85yl61.png"
+    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-yq9dpx.jpg"
 
     [wallpaper.monitors.HDMI-A-1]
-    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-85yl61.png"
+    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-yq9dpx.jpg"
 
 [widget.brightness]
 enabled = false

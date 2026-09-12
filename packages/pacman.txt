@@ -13,6 +13,7 @@ fastfetch
 fd
 ffmpeg
 flatpak
+gnome-keyring
 gst-plugin-pipewire
 hyprland
 imagemagick
@@ -35,6 +36,7 @@ plymouth
 poppler
 power-profiles-daemon
 resvg
+seahorse
 snapper
 spotify-launcher
 starship
