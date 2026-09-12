@@ -1,0 +1,219 @@
+#!/usr/bin/env bash
+# visor-sync — sync the Noctalia-rendered Visor theme onto the ESP.
+# Single-file manual sync, stowed to ~/.local/bin/visor-sync. Run after
+# changing your Noctalia theme, whenever you want the bootloader to match:
+#   visor-sync [--print] [wallpaper-image]
+#
+# --print resolves and shows the staged theme + wallpaper paths without
+# touching anything (safe dry-run). With no argument, the current Noctalia
+# wallpaper is resolved from settings.toml ([wallpaper.default],
+# [wallpaper.last], [wallpaper.monitors.*] — first readable file); an
+# explicit image path overrides the fallback.
+#
+# The script elevates itself: the user phase resolves and validates, then
+# re-execs via sudo (one intentional password prompt — there is deliberately
+# no passwordless rule for this). The root phase only ever writes these two
+# fixed destinations, atomically (mktemp + mv, 0644):
+#   /boot/EFI/visor/themes/noctalia.conf
+#   /boot/EFI/visor/backgrounds/visor-wallpaper.png
+# It never touches boot.conf (entries) or anything else on the ESP.
+#
+# NOTE: this file is user-writable and runs as root when you invoke it.
+# It is safe exactly as long as its contents are what you reviewed in git.
+set -euo pipefail
+
+usage() {
+    cat <<'EOF' >&2
+usage: visor-sync [--print] [wallpaper-image]
+       visor-sync --install <staged-theme-file> <wallpaper-image>  (internal: root phase)
+EOF
+    exit 2
+}
+
+# ---------------------------------------------------------------------------
+# Shared: wallpaper resolution (always runs as the user).
+# ---------------------------------------------------------------------------
+STATE_HOME="${NOCTALIA_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}}"
+STAGED="$STATE_HOME/noctalia/visor-staging/noctalia.conf"
+SETTINGS="$STATE_HOME/noctalia/settings.toml"
+
+pick_from_settings_py() {
+    # Prints first readable wallpaper path from settings.toml, or nothing.
+    [ -f "$SETTINGS" ] || return 0
+    command -v python3 >/dev/null 2>&1 || return 0
+    python3 - "$SETTINGS" <<'PY' 2>/dev/null || true
+import os
+import sys
+
+path = sys.argv[1]
+try:
+    import tomllib
+except ImportError:
+    sys.exit(1)
+try:
+    with open(path, "rb") as f:
+        data = tomllib.load(f)
+except Exception:
+    sys.exit(1)
+
+wallpaper = data.get("wallpaper", {})
+if not isinstance(wallpaper, dict):
+    sys.exit(1)
+
+candidates = []
+for key in ("default", "last"):
+    section = wallpaper.get(key)
+    if isinstance(section, dict) and section.get("path"):
+        candidates.append(section["path"])
+monitors = wallpaper.get("monitors")
+if isinstance(monitors, dict):
+    for monitor in sorted(monitors):
+        section = monitors[monitor]
+        if isinstance(section, dict) and section.get("path"):
+            candidates.append(section["path"])
+
+seen = set()
+for candidate in candidates:
+    candidate = os.path.expanduser(os.path.expandvars(candidate))
+    if candidate in seen:
+        continue
+    seen.add(candidate)
+    if os.path.isfile(candidate):
+        print(candidate)
+        break
+PY
+}
+
+pick_from_settings_grep() {
+    # Fallback when python3/tomllib is unavailable: first readable
+    # `path = "..."` value under the wallpaper tables.
+    [ -f "$SETTINGS" ] || return 0
+    grep -E '^[[:space:]]*path[[:space:]]*=' "$SETTINGS" 2>/dev/null \
+        | sed -E 's/^[^=]*=[[:space:]]*"([^"]+)".*/\1/' \
+        | while IFS= read -r candidate; do
+            [ -f "$candidate" ] && { printf '%s' "$candidate"; break; }
+        done
+}
+
+resolve_wallpaper() {
+    # $1 = optional explicit image override.
+    local image="${1:-}"
+    if [ -n "$image" ] && [ -f "$image" ]; then
+        printf '%s' "$image"
+        return 0
+    fi
+    local from_settings
+    from_settings="$(pick_from_settings_py)"
+    if [ -n "$from_settings" ] && [ -f "$from_settings" ]; then
+        printf '%s' "$from_settings"
+        return 0
+    fi
+    from_settings="$(pick_from_settings_grep)"
+    if [ -n "$from_settings" ] && [ -f "$from_settings" ]; then
+        printf '%s' "$from_settings"
+        return 0
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# Root phase: install staged theme + wallpaper onto the ESP.
+# ---------------------------------------------------------------------------
+install_phase() {
+    local staged="${1:?usage: visor-sync --install <staged-theme-file> <wallpaper-image>}"
+    local image="${2:-}"
+
+    # Test hook: point at a scratch dir instead of the real ESP.
+    local esp="${VISOR_ESP_DIR:-/boot/EFI/visor}"
+    local theme_out="$esp/themes/noctalia.conf"
+    local bg_out="$esp/backgrounds/visor-wallpaper.png"
+
+    # Refuse to write into an unmounted ESP (would land on the rootfs instead).
+    if [ -z "${VISOR_ESP_DIR:-}" ]; then
+        if ! mountpoint -q /boot; then
+            echo "visor-sync: /boot is not a mountpoint, refusing to write" >&2
+            exit 1
+        fi
+    fi
+
+    if [ ! -f "$staged" ]; then
+        echo "visor-sync: staged theme file not found: $staged" >&2
+        exit 1
+    fi
+
+    if grep -q '{{' "$staged"; then
+        echo "visor-sync: staged file still contains unrendered placeholders, refusing" >&2
+        exit 1
+    fi
+
+    mkdir -p "$esp/themes" "$esp/backgrounds"
+
+    local tmp
+    tmp="$(mktemp -p "$esp/themes" .noctalia.conf.XXXXXX)"
+    cp -- "$staged" "$tmp"
+    chmod 0644 "$tmp"
+    mv -f "$tmp" "$theme_out"
+
+    # Wallpaper: cover-crop the current Noctalia wallpaper to 1920x1080 PNG.
+    # Skipped (theme still installed) when no image is supplied or readable.
+    if [ -n "$image" ] && [ -f "$image" ]; then
+        local bgtmp
+        bgtmp="$(mktemp -p "$esp/backgrounds" .visor-wallpaper.XXXXXX.png)"
+        if magick "$image" -resize '1920x1080^' -gravity center -extent 1920x1080 "PNG32:$bgtmp" 2>/dev/null; then
+            chmod 0644 "$bgtmp"
+            mv -f "$bgtmp" "$bg_out"
+        else
+            echo "visor-sync: WARNING: could not convert $image, keeping previous background" >&2
+            rm -f "$bgtmp"
+        fi
+    else
+        echo "visor-sync: no wallpaper image supplied, keeping previous background" >&2
+    fi
+
+    echo "visor-sync: installed $theme_out"
+}
+
+# ---------------------------------------------------------------------------
+# Entry point.
+# ---------------------------------------------------------------------------
+if [ "${1:-}" = "--install" ]; then
+    # Internal root phase (reached only via sudo self-elevation below).
+    [ "$(id -u)" -eq 0 ] || { echo "visor-sync: --install is internal, run visor-sync as your user" >&2; exit 2; }
+    shift
+    [ "$#" -ge 1 ] && [ "$#" -le 2 ] || usage
+    install_phase "${1}" "${2:-}"
+    exit 0
+fi
+
+if [ "$(id -u)" -eq 0 ]; then
+    echo "visor-sync: run as your user (it elevates itself via sudo)" >&2
+    exit 2
+fi
+
+DRY_RUN=0
+if [ "${1:-}" = "--print" ]; then
+    DRY_RUN=1
+    shift
+fi
+[ "$#" -le 1 ] || usage
+
+# User phase: resolve everything first so a doomed run fails BEFORE sudo.
+IMG="$(resolve_wallpaper "${1:-}")"
+
+if [ ! -f "$STAGED" ]; then
+    echo "visor-sync: staged theme file not found: $STAGED" >&2
+    echo "visor-sync: change your Noctalia theme once so the template renders, then retry" >&2
+    exit 1
+fi
+
+if grep -q '{{' "$STAGED"; then
+    echo "visor-sync: staged file still contains unrendered placeholders, refusing" >&2
+    exit 1
+fi
+
+if [ "$DRY_RUN" -eq 1 ]; then
+    printf 'staged:    %s\nwallpaper: %s\n' "$STAGED" "${IMG:-<none — previous background kept>}"
+    exit 0
+fi
+
+exec sudo -- "$0" --install "$STAGED" "${IMG:-}"

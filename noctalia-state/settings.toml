@@ -242,7 +242,7 @@ font_family = "JetBrainsMono Nerd Font"
 polkit_agent = true
 
     [shell.greeter_sync]
-    auto_sync = true
+    auto_sync = false
 
     [shell.launcher]
     categories = false

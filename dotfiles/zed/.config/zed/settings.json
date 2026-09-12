@@ -8,7 +8,7 @@
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
   "title_bar": {
-    "show_sign_in": false
+    "show_sign_in": false,
   },
   "icon_theme": "Catppuccin Latte",
   "format_on_save": "on",
@@ -37,6 +37,12 @@
     "dock": "left",
   },
   "agent": {
+    "default_model": {
+      "provider": "opencode",
+      "model": "zen/gpt-5",
+      "enable_thinking": true,
+      "effort": "high",
+    },
     "sidebar_side": "right",
     "dock": "right",
     "favorite_models": [],

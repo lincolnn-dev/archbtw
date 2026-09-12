@@ -4,4 +4,4 @@
 [theme.templates.user.visor]
 input_path  = "$XDG_CONFIG_HOME/noctalia/templates/visor.conf"
 output_path = "$XDG_STATE_HOME/noctalia/visor-staging/noctalia.conf"
-post_hook   = "sudo -- /usr/local/bin/visor-install '$XDG_STATE_HOME/noctalia/visor-staging/noctalia.conf' '{{ image }}'"
+post_hook   = "staged=$HOME/.local/state/noctalia/visor-staging/noctalia.conf; esp=/boot/EFI/visor/themes/noctalia.conf; if [ -f \"$staged\" ] && { [ ! -f \"$esp\" ] || [ \"$staged\" -nt \"$esp\" ]; }; then (timeout 5 notify-send 'Visor theme staged' 'Run visor-sync to update the bootloader' &) || true; fi"

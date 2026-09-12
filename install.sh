@@ -63,7 +63,7 @@ install_visor() {
   echo "==> visor defaults"
   run sudo visor install --esp /boot --boot-entry
   run visor config validate --file "$REPO_DIR/system/esp/visor/boot.conf" || true
-  echo "==> visor overlay (ours wins)"
+  echo "==> visor overlay"
   run sudo mkdir -p /boot/EFI/visor/themes /boot/EFI/visor/backgrounds /boot/EFI/visor/icons
   run sudo cp -f "$REPO_DIR/system/esp/visor/boot.conf" /boot/EFI/visor/boot.conf
   run sudo cp -f "$REPO_DIR/system/esp/visor/themes/noctalia.conf" /boot/EFI/visor/themes/noctalia.conf
@@ -100,23 +100,16 @@ restore_state() {
     [ -f "$HOME/.local/state/noctalia/$f" ] && cp -f "$HOME/.local/state/noctalia/$f" "$HOME/.local/state/noctalia/$f.bak"
     cp -f "$REPO_DIR/noctalia-state/$f" "$HOME/.local/state/noctalia/$f"
   done
-  echo "    launch Noctalia once to regenerate theme outputs (kitty/zed/btop/fastfetch/...) + visor hook"
 }
 
 restore_system_etc() {
-  echo "==> system /etc + helpers"
+  echo "==> keyd + greetd"
   run sudo cp -f "$REPO_DIR/system/etc/keyd/default.conf" /etc/keyd/default.conf
   run sudo cp -f "$REPO_DIR/system/etc/greetd/config.toml" /etc/greetd/config.toml
-  [ -f "$REPO_DIR/system/etc/zram-generator.conf" ] && run sudo cp -f "$REPO_DIR/system/etc/zram-generator.conf" /etc/systemd/zram-generator.conf || true
-  run sudo install -m0755 "$REPO_DIR/system/usr-local/bin/visor-install" /usr/local/bin/visor-install
-  run sudo install -m0440 "$REPO_DIR/system/sudoers.d/visor-noctalia" /etc/sudoers.d/visor-noctalia
-  run sudo visudo -c -f /etc/sudoers.d/visor-noctalia || true
-  echo "    NOTE: snapper configs need sudo interactively: snapper -c root create-config / (if missing)"
 }
 
 install_spotify() {
   # Noctalia community template: https://docs.noctalia.dev/noctalia/templates/community/spotify/
-  # Spotify itself comes from spotify-launcher (pacman.txt); theming via spicetify + Comfy.
   echo "==> spotify + spicetify"
   local spicetify_bin color_scheme spotify_dir theme_dir
   if command -v spicetify >/dev/null 2>&1; then
@@ -155,7 +148,6 @@ install_spotify() {
   run "$spicetify_bin" config color_scheme "$color_scheme"
   run "$spicetify_bin" config inject_css 1 replace_colors 1 overwrite_assets 1 inject_theme_js 1
   run "$spicetify_bin" apply
-  echo "    then enable the Spicetify template in Noctalia (Settings -> Color Scheme -> Templates), already in community_ids"
 }
 
 enable_ufw() {
@@ -182,7 +174,7 @@ finish() {
   echo "==> finish"
   run fc-cache -f >/dev/null || true
   run xdg-user-dirs-update || true
-  echo "done. Reboot and check: visor menu (Arch+Windows) -> noctalia-greeter -> hyprland, audio, keyd."
+  echo "done."
 }
 
 main() {
