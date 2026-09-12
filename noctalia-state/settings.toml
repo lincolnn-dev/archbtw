@@ -24,7 +24,6 @@ order = [ "default" ]
     position = "top"
     radius = 24
     shadow = false
-    start = [ "launcher", "wallpaper", "workspaces", "wallhaven" ]
     thickness = 32
 
 [brightness]
@@ -316,13 +315,16 @@ directory_light = "/home/tropikalmalady/Pictures/wallpapers"
 transition_on_startup = true
 
     [wallpaper.default]
-    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-5geev3.jpg"
+    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-85yl61.png"
 
     [wallpaper.last]
-    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-5geev3.jpg"
+    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-85yl61.png"
 
     [wallpaper.monitors.DP-2]
-    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-5geev3.jpg"
+    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-85yl61.png"
+
+    [wallpaper.monitors.HDMI-A-1]
+    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-85yl61.png"
 
 [widget.brightness]
 enabled = false
@@ -341,10 +343,6 @@ hide_when_no_media = true
 
 [widget.session]
 enabled = false
-
-[widget.wallhaven]
-enabled = false
-type = "noctalia/wallhaven:wallhaven"
 
 [widget.wallpaper]
 enabled = false

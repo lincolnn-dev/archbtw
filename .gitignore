@@ -3,6 +3,7 @@
 **/themes/noctalia.json
 **/themes/noctalia.theme
 **/themes/noctalia.jsonc
+**/hypr/noctalia.lua
 *.bak
 
 # Noctalia re-fetchable caches / runtime — never commit.
