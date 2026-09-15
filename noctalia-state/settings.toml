@@ -71,7 +71,7 @@ behavior_order = [ "lock", "screen-off", "lock-and-suspend" ]
     [idle.behavior.lock]
     action = "lock"
     enabled = true
-    timeout = 300.0
+    timeout = 3000.0
 
     [idle.behavior.lock-and-suspend]
     action = "lock_and_suspend"
@@ -81,7 +81,7 @@ behavior_order = [ "lock", "screen-off", "lock-and-suspend" ]
     [idle.behavior.screen-off]
     action = "screen_off"
     enabled = true
-    timeout = 330.0
+    timeout = 3300.0
 
 [location]
 address = "Joinville"
@@ -294,12 +294,12 @@ polkit_agent = true
     variant = "default"
 
 [theme]
-builtin = "Ayu"
-community_palette = "Cyberpunk"
-custom_palette = "wallhaven-5geev3-ts"
+builtin = "Tokyo-Night"
+community_palette = "Gruber Darker"
+custom_palette = "wallhaven-yq9dpx-dys"
 mode = "dark"
-source = "wallpaper"
-wallpaper_scheme = "dysfunctional"
+source = "community"
+wallpaper_scheme = "m3-rainbow"
 
     [theme.templates]
     builtin_ids = [ "btop", "gtk3", "gtk4", "hyprland", "kcolorscheme", "kitty", "qt", "scroll", "starship" ]
@@ -312,16 +312,16 @@ directory_light = "/home/tropikalmalady/Pictures/wallpapers"
 transition_on_startup = true
 
     [wallpaper.default]
-    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-yq9dpx.jpg"
+    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-qrow67.png"
 
     [wallpaper.last]
-    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-yq9dpx.jpg"
+    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-qrow67.png"
 
     [wallpaper.monitors.DP-2]
-    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-yq9dpx.jpg"
+    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-qrow67.png"
 
     [wallpaper.monitors.HDMI-A-1]
-    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-yq9dpx.jpg"
+    path = "/home/tropikalmalady/Pictures/wallpapers/wallhaven-qrow67.png"
 
 [widget.brightness]
 enabled = false

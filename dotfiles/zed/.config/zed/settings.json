@@ -10,7 +10,7 @@
   "title_bar": {
     "show_sign_in": false,
   },
-  "icon_theme": "Catppuccin Latte",
+  "icon_theme": "Catppuccin Latte Monochrome",
   "format_on_save": "on",
   "prettier": {
     "allowed": true,

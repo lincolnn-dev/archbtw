@@ -1,6 +1,7 @@
 7zip
 adw-gtk-theme
 amd-ucode
+aria2
 base
 base-devel
 brightnessctl
@@ -13,6 +14,7 @@ fastfetch
 fd
 ffmpeg
 flatpak
+fzf
 gnome-keyring
 gst-plugin-pipewire
 hyprland
@@ -51,5 +53,6 @@ xdg-desktop-portal-hyprland
 xdg-user-dirs
 yazi
 zed
+zoxide
 zram-generator
 zsh
