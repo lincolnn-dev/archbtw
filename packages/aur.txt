@@ -1,6 +1,9 @@
 bibata-cursor-theme-bin
 helium-browser-bin
+limine-mkinitcpio-hook
+limine-snapper-sync
 noctalia-greeter
 otf-openmoji
 plymouth-theme-arch-logo-symbol
+ventoy
 visor

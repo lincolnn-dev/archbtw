@@ -2,9 +2,11 @@
 adw-gtk-theme
 amd-ucode
 aria2
+b3sum
 base
 base-devel
 brightnessctl
+btrfs-assistant
 btrfs-progs
 clamui
 ddcutil
@@ -15,12 +17,15 @@ fd
 ffmpeg
 flatpak
 fzf
+gdu
 gnome-keyring
 gst-plugin-pipewire
 hyprland
 imagemagick
+inotify-tools
 keyd
 kitty
+libisoburn
 libpulse
 linux
 linux-firmware
@@ -39,6 +44,7 @@ poppler
 power-profiles-daemon
 resvg
 seahorse
+snap-pac
 snapper
 spotify-launcher
 starship

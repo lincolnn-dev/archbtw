@@ -4,7 +4,7 @@ source ~/.local/share/zsh/plugins/zsh-shift-select/zsh-shift-select.plugin.zsh
 
 alias zrc="nvim ~/.zshrc"
 alias ll="ls -la"
-alias homeserver="ssh -4 tropikalmalady@homeserver.local"
+alias homelab="ssh -4 tropikalmalady@homelab.local"
 
 bindkey '\eOH' beginning-of-line
 bindkey '\eOF' end-of-line

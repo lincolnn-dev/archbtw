@@ -17,7 +17,7 @@ Restore kit for this machine: packages, Visor boot entries, dotfiles, Noctalia s
 2. Installs Visor to the ESP, then overlays this repo's `boot.conf`, theme, wallpaper, icons.
 3. Stows `dotfiles/` (`zsh`, `kitty`, `hyprland`, `zed`, `clamui`, `noctalia` templates, `helium` flags, `spicetify`, `wallpapers`); clones the manual zsh plugin.
 4. Restores Noctalia `settings.toml`/`state.toml` (all enabled templates). Launch Noctalia once to regenerate theme files.
-5. Restores `keyd`, `greetd` configs.
+5. Restores `keyd`, `greetd` and `snapper` configs.
 6. Installs spicetify (official script), clones Comfy, applies `current_theme Comfy` config set. Spotify must be downloaded once via `spotify-launcher` first.
 7. Enables services, enables UFW (default config).
 8. Refreshes font cache and user dirs.
@@ -37,4 +37,4 @@ Restore kit for this machine: packages, Visor boot entries, dotfiles, Noctalia s
 | `dotfiles/*/`              | stow packages, each mirroring `$HOME`                                                                                                            |
 | `noctalia-state/`          | `settings.toml`, `state.toml` (restored via copy)                                                                                                |
 | `system/esp/visor/`        | `boot.conf`, theme, wallpaper, icons                                                                                                             |
-| `system/etc/`              | `keyd`, `greetd`                                                                                                                                 |
+| `system/etc/`              | `keyd`, `greetd`, `snapper`                                                                                                                      |

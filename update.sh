@@ -22,8 +22,10 @@ done
 echo "==> noctalia GUI state"
 cp -f "$HOME/.local/state/noctalia/settings.toml" "$HOME/.local/state/noctalia/state.toml" "$REPO_DIR/noctalia-state/"
 
-echo "==> keyd + greetd"
+echo "==> keyd + greetd + snapper"
 cp -f /etc/keyd/default.conf "$REPO_DIR/system/etc/keyd/default.conf"
 cp -f /etc/greetd/config.toml "$REPO_DIR/system/etc/greetd/config.toml"
+cp -f /etc/snapper/configs/home "$REPO_DIR/system/etc/snapper/home"
+cp -f /etc/snapper/configs/root "$REPO_DIR/system/etc/snapper/root"
 
 echo "done."

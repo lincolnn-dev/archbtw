@@ -5,6 +5,7 @@ fail2ban.service
 getty@.service
 greetd.service
 keyd.service
+limine-snapper-sync.service
 power-profiles-daemon.service
 remote-fs.target
 snapper-cleanup.timer

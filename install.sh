@@ -103,9 +103,11 @@ restore_state() {
 }
 
 restore_system_etc() {
-  echo "==> keyd + greetd"
+  echo "==> keyd + greetd + snapper"
   run sudo cp -f "$REPO_DIR/system/etc/keyd/default.conf" /etc/keyd/default.conf
   run sudo cp -f "$REPO_DIR/system/etc/greetd/config.toml" /etc/greetd/config.toml
+  run sudo cp -f "$REPO_DIR/system/etc/snapper/home" /etc/snapper/configs/home
+  run sudo cp -f "$REPO_DIR/system/etc/snapper/root" /etc/snapper/configs/root
 }
 
 install_spotify() {
