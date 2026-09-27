@@ -5,6 +5,7 @@ clamav-freshclam.service
 fail2ban.service
 greetd.service
 keyd.service
+limine-snapper-sync.service
 power-profiles-daemon.service
 snapper-cleanup.timer
 snapper-timeline.timer
